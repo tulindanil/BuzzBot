@@ -5,7 +5,8 @@
 import json
 import logging
 
-import sqlite3
+from database import Database
+from encoder import Encoder
 
 import telegram
 from telegram.ext import Updater
@@ -14,8 +15,9 @@ from telegram.ext import RegexHandler
 
 class Node:
 
-    def __init__(self):
+    def __init__(self, name):
         self.map = {}
+        self.name = name
 
     def add_adj(self, message, node, feedback):
         self.map[message] = node, feedback
@@ -26,7 +28,7 @@ class Node:
 
 class Graph:
 
-    def __init__(self):
+    def __init__(self, cur_node_name):
         self.nodes = {}
 
         self.add_node('napping')
@@ -35,40 +37,38 @@ class Graph:
         self.add_node('decision')
 
         self.add_edge('napping', 'idle', '/wake', 
-                      'It was really nice, I suppose')
+                      lambda: '{wake}')
 
         self.add_edge('idle', 'napping', '/snooze', \
-                      'Yo, man. I got it.' + 
-                      ' Nap time is the best solution')
+                      lambda: '{snooze}')
 
         self.add_edge('idle', 'decision', '/do', 
-                      'What are you gonna do?')
+                      lambda: '{decision}')
 
         self.add_edge('decision', 'idle', '/cancel', 
-                      'Keep idling, bitch')
+                      lambda: '{no_decision}')
 
         self.add_edge('decision', 'activity', '',
-                      'Do it, man!')
+                      lambda: '{activity}')
 
         self.add_edge('activity', 'idle', '/done', 
-                      'Nice work, man!')
+                      lambda: '{activity_is_done}')
 
-        self.cur_node = self.nodes['idle']
+        self.cur_node = self.nodes[cur_node_name]
 
     def add_node(self, name):
-        self.nodes[name] = Node()
+        self.nodes[name] = Node(name)
 
     def add_edge(self, src, dst, message, feedback):
         self.nodes[src].add_adj(message, self.nodes[dst], feedback)
 
     def go(self, msg):
        self.cur_node, feedback = self.cur_node.go(msg)
-       return feedback
+       return self.cur_node.name, feedback()
 
 class Configuration:
 
     def __init__(self, path='./configuration.json'):
-
         with open(path) as f:
             data = json.load(f)
             f.close()
@@ -77,23 +77,47 @@ class Configuration:
         self.resources = data['resources']
 
 config = Configuration()
+db = Database(config.resources + '/database.sqlite')
+encoder = Encoder('./phrases.json')
+
+def start_converstation(user_id):
+    if db.contains(user_id):
+        return '{user_comeback}'
+    else:
+        logging.info('{0} tries to chat'.format(user_id))
+        return '{new_user}'
+        db.add_user(user_id)
 
 def start(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id,  \
-                    text="I'm a bot, please talk to me!")
+    user_id = update.message.from_user.id
+    text_to_send = encode(start_converstation(user_id))
+    bot.sendMessage(user_id, text_to_send)
 
-graph = Graph()
+def encode(raw_text):
+    try:
+        return raw_text.format(**encoder)
+    except:
+        return raw_text
+
+def continue_conversation(user_id, text):
+    node = db.get_user_node(user_id)
+    graph = Graph(node)
+
+    try: 
+        new_node, feedback = graph.go(text)
+        db.add_activity(user_id, text, new_node)
+        return feedback
+    except Exception as e:
+        logging.debug('try except block failed: {0}'.format(e))
+        return '{not_valid}'
 
 def unknown(bot, update):
-    text = update.message.text 
-    chat_id = update.message.chat_id
-    try: 
-        feedback = graph.go(text)
-        bot.sendMessage(chat_id, feedback)
-    except Exception as e:
-        logging.debug('Can\'t go in the graph: {0}'.format(e))
-        bot.sendMessage(chat_id, \
-                        'Heeey, that is not valid')
+    message = update.message
+    user_id = message.from_user.id
+    text = message.text
+    raw_text = continue_conversation(user_id, text)
+    bot.sendMessage(user_id, encode(raw_text))
+
 
 if __name__ == '__main__':
 
