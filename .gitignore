@@ -62,5 +62,5 @@ target/
 #Ipython Notebook
 .ipynb_checkpoints
 
-#token
-.credentials.auth
+configuration.json
+resources
