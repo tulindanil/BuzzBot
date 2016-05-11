@@ -5,6 +5,8 @@
 import json
 import logging
 
+import sqlite3
+
 import telegram
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
@@ -86,8 +88,7 @@ def unknown(bot, update):
     text = update.message.text 
     chat_id = update.message.chat_id
     try: 
-        cmd, = text.split()
-        feedback = graph.go(cmd)
+        feedback = graph.go(text)
         bot.sendMessage(chat_id, feedback)
     except Exception as e:
         logging.debug('Can\'t go in the graph: {0}'.format(e))
