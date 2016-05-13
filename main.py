@@ -23,8 +23,7 @@ class Node:
         self.map[message] = node, feedback
 
     def go(self, message):
-        return self.map.get(message, 
-                            self.map.get(''))
+        return self.map.get(message, self.map.get(''))
 
 class Graph:
 
@@ -36,23 +35,23 @@ class Graph:
         self.add_node('activity')
         self.add_node('decision')
 
-        self.add_edge('napping', 'idle', '/wake', 
-                      lambda: '{wake}')
+        self.add_edge('napping', 'idle', '/wake',
+                      lambda: ['{wake}'])
 
         self.add_edge('idle', 'napping', '/snooze', \
-                      lambda: '{snooze}')
+                      lambda: ['{snooze}'])
 
-        self.add_edge('idle', 'decision', '/do', 
-                      lambda: '{decision}')
+        self.add_edge('idle', 'decision', '/do',
+                      lambda: ['{decision}'])
 
-        self.add_edge('decision', 'idle', '/cancel', 
-                      lambda: '{no_decision}')
+        self.add_edge('decision', 'idle', '/cancel',
+                      lambda: ['{no_decision}'])
 
         self.add_edge('decision', 'activity', '',
-                      lambda: '{activity}')
+                      lambda: ['{activity}'])
 
-        self.add_edge('activity', 'idle', '/done', 
-                      lambda: '{activity_is_done}')
+        self.add_edge('activity', 'idle', '/done',
+                      lambda: ['{activity_is_done}'])
 
         self.cur_node = self.nodes[cur_node_name]
 
@@ -63,8 +62,8 @@ class Graph:
         self.nodes[src].add_adj(message, self.nodes[dst], feedback)
 
     def go(self, msg):
-       self.cur_node, feedback = self.cur_node.go(msg)
-       return self.cur_node.name, feedback()
+        self.cur_node, feedback = self.cur_node.go(msg)
+        return self.cur_node.name, feedback()
 
 class Configuration:
 
@@ -85,8 +84,8 @@ def start_converstation(user_id):
         return '{user_comeback}'
     else:
         logging.info('{0} tries to chat'.format(user_id))
-        return '{new_user}'
         db.add_user(user_id)
+        return '{new_user}'
 
 def start(bot, update):
     user_id = update.message.from_user.id
@@ -103,20 +102,23 @@ def continue_conversation(user_id, text):
     node = db.get_user_node(user_id)
     graph = Graph(node)
 
-    try: 
+    try:
         new_node, feedback = graph.go(text)
-        db.add_activity(user_id, text, new_node)
+        #db.add_activity(user_id, text, new_node)
         return feedback
     except Exception as e:
-        logging.debug('try except block failed: {0}'.format(e))
-        return '{not_valid}'
+        logging.debug('try except block failed: %s', e)
+        return ['{not_valid}']
 
 def unknown(bot, update):
     message = update.message
     user_id = message.from_user.id
+    bot.sendChatAction(user_id,
+                       telegram.ChatAction.TYPING)
     text = message.text
-    raw_text = continue_conversation(user_id, text)
-    bot.sendMessage(user_id, encode(raw_text))
+    messages = continue_conversation(user_id, text)
+    for raw_text in messages:
+        bot.sendMessage(user_id, encode(raw_text))
 
 
 if __name__ == '__main__':
