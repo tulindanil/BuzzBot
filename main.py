@@ -2,45 +2,60 @@
 # -*- coding: utf-8 -*-
 #
 
-import json                                                 
 import logging
 
-import sys
-
-from database import Database
-from encoder import Encoder
-
-import telegram
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram.ext import RegexHandler
 
-from configurator import configurator
+from utils import Configurator
+from utils import encode
+
+from worker import Worker
+
+class Helper:
+
+    def __init__(self, worker):
+        self.worker = worker
+
+    @staticmethod
+    def __sendmessage__(bot, user_id, feedback):
+        text = encode(feedback)
+        bot.sendMessage(user_id, text)
+
+    def start(self, bot, update):
+        user_id = update.message.from_user.id
+
+        feedback = self.worker.start_conversation(user_id)
+        self.__sendmessage__(bot, user_id, feedback)
+
+    def unknown(self, bot, update):
+        message = update.message
+
+        text = message.text
+        user_id = message.from_user.id
+
+        feedback = self.worker.keep_dialog(user_id, text)
+        self.__sendmessage__(bot, user_id, feedback)
 
 def main():
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.ERROR)
 
-    c = configurator()
+    configurator = Configurator()
+    worker = Worker()
+    helper = Helper(worker)
 
-    updater = Updater(c['token'])
+    updater = Updater(configurator['token'])
     dispatcher = updater.dispatcher
 
-    start_handler = CommandHandler('start', start)
+    start_handler = CommandHandler('start', helper.start)
     dispatcher.addHandler(start_handler)
 
-    unknown_handler = RegexHandler(r'.*', unknown)
+    unknown_handler = RegexHandler(r'.*', helper.unknown)
     dispatcher.addHandler(unknown_handler)
 
     updater.start_polling()
 
 if __name__ == '__main__':
-
-    while 1:
-        try: main()
-        except KeyboardInterrupt:
-            sys.exit(0)
-        except Exception as e:
-            print('Caught exception',
-                  'in the main loop:',
-                  '%s' % e)
+    main()
