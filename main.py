@@ -26,7 +26,7 @@ class Helper:
     def start(self, bot, update):
         user_id = update.message.from_user.id
 
-        feedback = self.worker.start_conversation(user_id)
+        feedback = self.worker.start_dialog(user_id)
         self.__sendmessage__(bot, user_id, feedback)
 
     def unknown(self, bot, update):
