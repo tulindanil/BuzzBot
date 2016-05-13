@@ -30,36 +30,38 @@ class Graph:
     def __init__(self, cur_node_name):
         self.nodes = {}
 
-        self.add_node('napping')
-        self.add_node('idle')
-        self.add_node('activity')
-        self.add_node('decision')
+        napping = self.add_node('napping')
+        idle = self.add_node('idle')
+        activity = self.add_node('activity')
+        decision = self.add_node('decision')
 
-        self.add_edge('napping', 'idle', '/wake',
+        self.add_edge(napping, idle, '/wake',
                       lambda: ['{wake}'])
 
-        self.add_edge('idle', 'napping', '/snooze', \
+        self.add_edge(idle, napping, '/snooze', \
                       lambda: ['{snooze}'])
 
-        self.add_edge('idle', 'decision', '/do',
+        self.add_edge(idle, decision, '/do',
                       lambda: ['{decision}'])
 
-        self.add_edge('decision', 'idle', '/cancel',
+        self.add_edge(decision, idle, '/cancel',
                       lambda: ['{no_decision}'])
 
-        self.add_edge('decision', 'activity', '',
+        self.add_edge(decision, activity, '',
                       lambda: ['{activity}'])
 
-        self.add_edge('activity', 'idle', '/done',
+        self.add_edge(activity, idle, '/done',
                       lambda: ['{activity_is_done}'])
 
         self.cur_node = self.nodes[cur_node_name]
 
     def add_node(self, name):
-        self.nodes[name] = Node(name)
+        node = Node(name)
+        self.nodes[name] = node
+        return node
 
     def add_edge(self, src, dst, message, feedback):
-        self.nodes[src].add_adj(message, self.nodes[dst], feedback)
+        src.add_adj(message, dst, feedback)
 
     def go(self, msg):
         self.cur_node, feedback = self.cur_node.go(msg)
@@ -104,7 +106,7 @@ def continue_conversation(user_id, text):
 
     try:
         new_node, feedback = graph.go(text)
-        #db.add_activity(user_id, text, new_node)
+        db.add_activity(user_id, text, new_node)
         return feedback
     except Exception as e:
         logging.debug('try except block failed: %s', e)
