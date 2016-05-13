@@ -64,3 +64,4 @@ target/
 
 configuration.json
 resources
+.credentials.json
