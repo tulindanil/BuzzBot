@@ -1,4 +1,4 @@
-from .database import Database
+from .storage import Storage
 from .worker import Worker
 
-__all__ = ['Worker', 'Database']
+__all__ = ['Worker', 'Storage']

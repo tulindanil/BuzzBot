@@ -1,6 +1,8 @@
-from . import Database
+from . import Storage
 
 class Worker:
+
+    def __init__(): pass
 
     def start_dialog(self, user_id):
         return '{user_comeback}' 

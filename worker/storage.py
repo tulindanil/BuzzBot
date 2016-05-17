@@ -1,6 +1,5 @@
 import sqlite3
 
-class Database:
+class Storage:
 
-    def __init__(self):
-        self.path = path
+    def __init__(self): pass
