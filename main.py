@@ -18,7 +18,7 @@ class Helper:
         self.worker = worker
 
     @staticmethod
-    def __sendmessage__(bot, user_id, feedback):
+    def send_message(bot, user_id, feedback):
         for raw_text in feedback:
             text = encode(raw_text)
             bot.sendMessage(user_id, text)
@@ -27,7 +27,7 @@ class Helper:
         user_id = update.message.from_user.id
 
         feedback = self.worker.start_dialog(user_id)
-        self.__sendmessage__(bot, user_id, feedback)
+        self.send_message(bot, user_id, feedback)
 
     def unknown(self, bot, update):
         message = update.message
@@ -36,7 +36,7 @@ class Helper:
         user_id = message.from_user.id
 
         feedback = self.worker.keep_dialog(user_id, text)
-        self.__sendmessage__(bot, user_id, feedback)
+        self.send_message(bot, user_id, feedback)
 
 def main():
 
