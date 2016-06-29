@@ -1,11 +1,16 @@
 from . import Storage
 
+class Edge():
+    def __init__(self, neighbor, feedback):
+       self.neighbor = neighbor
+       self.feedback = feedback
+
 class Node():
     def __init__():
         self.map = {}
 
-    def add_neighbor(to_node, cmd, feedback):
-        pass
+    def add_neighbor(key, edge):
+        self.map[key] = edge
 
 class Graph():
     def __init__(self):
@@ -23,12 +28,18 @@ class Graph():
         for name in node_names:
             self.nodes[name] = Node()
 
-        for from_idx, to_idx, cmd, feedback in edges:
-            from_node = self.nodes[from_idx]
-            to_node = self.nodes[to_idx]
-            node.add_neighbor(to_node, cmd, feedback)
+        for from_idx, to_idx, key, feedback in edges:
+            node_name = node_names[from_idx]
+            neighbor_name = node_names[to_idx]
 
-        self.current_node = self.nodes[node_names[1]]
+            node = self.nodes[node_name]
+            neighbor = self.nodes[neighbor_name]
+
+            edge = Edge(neighbor, feedback)
+            node.add_neighbor(key, edge)
+
+        self.initial_node = self.nodes[node_names[1]]
+        self.current_node = self.initial_node
 
 class Worker:
     def __init__(self):
