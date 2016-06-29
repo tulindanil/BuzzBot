@@ -14,14 +14,14 @@ from utils import encode
 from worker import Worker
 
 class Helper:
-
     def __init__(self, worker):
         self.worker = worker
 
     @staticmethod
     def __sendmessage__(bot, user_id, feedback):
-        text = encode(feedback)
-        bot.sendMessage(user_id, text)
+        for raw_text in feedback:
+            text = encode(raw_text)
+            bot.sendMessage(user_id, text)
 
     def start(self, bot, update):
         user_id = update.message.from_user.id
