@@ -28,9 +28,9 @@ class Storage:
 
     @synchronize
     def obtain_new_user(self, user_id, db):
-        value = db.get(user_id, False)
-        if value:
+        user = str(user_id)
+        if user in db:
             return False
         else:
-            db['user_id'] = ''
+            db[user] = ''
             return True
