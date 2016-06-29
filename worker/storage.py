@@ -27,6 +27,10 @@ class Storage:
         return wrapper
 
     @synchronize
-    def is_it_new_user(self, user_id, db):
-        # do something with db
-        return False
+    def obtain_new_user(self, user_id, db):
+        value = db.get(user_id, False)
+        if value:
+            return False
+        else:
+            db['user_id'] = ''
+            return True
